@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros">
+    <QtDir>C:\Qt\</QtDir>
+    <QtVer>5.6</QtVer>
+    <QtPath>$(QtDir)$(QtVer)\msvc2015_64\</QtPath>
+    <QtInclude>$(QtPath)\include</QtInclude>
+    <QtLib>$(QtPath)\lib</QtLib>
+    <QtBin>$(QtPath)\bin</QtBin>
+  </PropertyGroup>
+  <PropertyGroup>
+    <_PropertySheetDisplayName>QtConfig</_PropertySheetDisplayName>
+  </PropertyGroup>
+  <ItemDefinitionGroup />
+  <ItemGroup>
+    <BuildMacro Include="QtDir">
+      <Value>$(QtDir)</Value>
+    </BuildMacro>
+    <BuildMacro Include="QtVer">
+      <Value>$(QtVer)</Value>
+    </BuildMacro>
+    <BuildMacro Include="QtPath">
+      <Value>$(QtPath)</Value>
+    </BuildMacro>
+    <BuildMacro Include="QtInclude">
+      <Value>$(QtInclude)</Value>
+    </BuildMacro>
+    <BuildMacro Include="QtLib">
+      <Value>$(QtLib)</Value>
+    </BuildMacro>
+    <BuildMacro Include="QtBin">
+      <Value>$(QtBin)</Value>
+    </BuildMacro>
+  </ItemGroup>
+</Project>

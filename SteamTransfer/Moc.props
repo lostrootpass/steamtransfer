@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+	<!-- Sourced from https://gist.github.com/venkatperi/a709593aec23e0aabc65 -->
+
+  <PropertyGroup>
+    <CppDir>src</CppDir>
+    <GenDir>gen</GenDir>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <MocExt>h</MocExt>
+    <Moc>$(QtBin)\moc.exe</Moc>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <MocFlags>-DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_CORE_LIB -I$(GenDir)/ -I$(QtDir)\include\ -I$(QtDir)\include\Qt -I$(QtDir)\include\QtCore -I$(QtDir)\include\QtDeclarative -I$(QtDir)\include\QtGui</MocFlags>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <MocFlags>-DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_NO_DEBUG=1 -DQT_CORE_LIB -I$(GenDir)/ -I$(QtDir)\include\ -I$(QtDir)\include\Qt -I$(QtDir)\include\QtCore -I$(QtDir)\include\QtDeclarative -I$(QtDir)\include\QtGui</MocFlags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <QtIncludes Include="$(CppDir)/**/*.$(MocExt)"/>
+  </ItemGroup>
+
+  <Target Inputs="@(QtIncludes)" 
+          Name="Moc" 
+          BeforeTargets="ClCompile" 
+          Outputs="@(QtIncludes->'$(GenDir)/moc_%(Filename).cpp')">
+    <Exec Command = "$(Moc) %(QtIncludes.identity) -nw -o $(GenDir)/moc_%(Filename).cpp $(MocFlags)"/>
+  </Target>
+
+  <Target Name="CreateDirectories" BeforeTargets="Moc">
+    <MakeDir
+        Directories="$(GenDir)"/>
+  </Target>
+
+  <Target Inputs="@(CopyToOutput)"
+          Name="CopytoOut"
+          Outputs="@(CopyToOutput->'%(DestinationFolder)/%(RecursiveDir)%(Filename)%(Extension)')"
+          AfterTargets="Link">
+  </Target>
+  
+</Project>
