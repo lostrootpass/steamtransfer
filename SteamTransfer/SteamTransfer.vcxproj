@@ -115,6 +115,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>Qt5Cored.lib;Qt5Widgetsd.lib;Qt5Guid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
     </Link>
     <PreBuildEvent>
       <Command>
@@ -154,6 +155,7 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\util\parse.cpp" />
     <ClCompile Include="src\util\platform_win32.cpp" />
+    <ClCompile Include="src\util\win32\TransferProgressIndicator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dist\json\json-forwards.h" />
@@ -166,6 +168,7 @@
     <ClInclude Include="src\ui\MainWindow.h" />
     <ClInclude Include="src\util\parse.h" />
     <ClInclude Include="src\util\platform.h" />
+    <ClInclude Include="src\util\win32\TransferProgressIndicator.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

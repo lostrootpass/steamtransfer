@@ -11,6 +11,10 @@
 #include <fstream>
 #include <codecvt>
 #include <sys/stat.h>
+#include <iostream>
+#include <atlbase.h>
+#include <ShlObj.h>
+#include <algorithm>
 #include "parse.h"
 
 bool isSteamRunning()
@@ -33,6 +37,7 @@ bool isSteamRunning()
 			//Pitfall: will return true if *any* process called Steam.exe is running
 			//But how many users run multiple things called Steam.exe on their boxes?
 			//You could query Steam's process ID from the registry instead, if you really wanted.
+			//Not sure how reliably that gets updated though (e.g. crash exits). This seems more trustworthy overall.
 			if(strcmp(process.szExeFile, "Steam.exe") == 0)
 			{
 				found = true;
@@ -45,14 +50,30 @@ bool isSteamRunning()
 	return found;
 }
 
+std::wstring folderNameFromManifest(const std::wstring& manifest)
+{
+	std::wstring contents = getTextFileContents(manifest);
+
+	VDFParser parser;
+	VDFObject root;
+	parser.parse(contents, root);
+
+	return root[L"AppState"][L"installdir"].rawValue;
+}
+
 //Copy a SteamApp from its current location to the destination specified.
 //The destination must be the numeric ID of a dest listed in libraryfolders.vdf
 void copyApp(unsigned int id, unsigned int dest)
 {
-	//1. Find the folder containing id
+	//Fun fact, we use backslashes here because some of the shell APIs will fail with E_INVALIDARG on
+	// forward slashes even though many of the shell APIs understand forward slashes perfectly.
+	//Funner fact: the above fun fact is entirely undocumented, anywhere.
+	//Thanks, Microsoft.
+	//Thicrosoft.
 
 	std::wstring installDir = getSteamInstallDirectory();
-	std::wstring libFolderPath = installDir + L"/steamapps/libraryfolders.vdf";
+	std::wstring libFolderPath = installDir + L"\\steamapps\\libraryfolders.vdf";
+	std::wstring metadataFileName = L"appmanifest_" + std::to_wstring(id) + L".acf";
 
 	std::wstring contents = getTextFileContents(libFolderPath);
 
@@ -60,26 +81,114 @@ void copyApp(unsigned int id, unsigned int dest)
 	VDFObject root;
 	parser.parse(contents, root);
 
-	std::wstring& universe = root[L"LibraryFolders"][L"1"].rawValue;
-
+	unsigned int currUniverse = -1;
+	std::wstring sourcePath;
+	std::wstring metaPath;
 	struct stat s;
-	if (stat(std::string(universe.begin(), universe.end()).c_str(), &s) == 0)
-	{
 
+	//TODO: accurately retrieve universe list from VDF
+	for (unsigned int u = 0; u <= 1; ++u)
+	{
+		//Construct the basic path of the universe's steamapps directory.
+		std::wstring path = (u == 0 ? installDir : root[L"LibraryFolders"][std::to_wstring(u).c_str()].rawValue);
+		path += L"\\steamapps\\";
+
+		//Check if the app we're looking for is installed here.
+		metaPath = path + metadataFileName;
+		if (stat(std::string(metaPath.begin(), metaPath.end()).c_str(), &s) == 0)
+		{
+			//We've found it.
+			currUniverse = u;
+			sourcePath = path;
+			break;
+		}
 	}
 
-	//Make sure the source and dest aren't the same universe.
+	//TODO: should probably notify the user somehow if these happen.
+	if (currUniverse == -1)
+	{
+		std::cerr << "Couldn't find game install anywhere." << std::endl;
+		return;
+	}
+	else if (currUniverse == dest)
+	{
+		std::cerr << "Game is already installed at given destination." << std::endl;
+		return;
+	}
 
-	//2. Make sure the folder doesn't already exist in the desination
+	//Copy the metadata file to the destination first. It makes it easier to recover if the game copy goes wrong midway.
+	//The appmanifest file contains its own Universe property, but we intentionally avoid changing that
+	// Steam is smart enough to pick up that the universe for the game has changed and will update it itself.
+	//Also, copying a tiny file like this across volumes is a good canary to avoid spending lots of time trying to
+	// do a copy operation that might not even be allowed.
+	
+	std::wstring destPath = (dest == 0 ? installDir : root[L"LibraryFolders"][std::to_wstring(dest).c_str()].rawValue);
+	destPath += L"\\steamapps\\";
 
-	//3. Copy the metadata file between the steamapps directories
+	//Grab the path from the manifest before we move it.
+	const std::wstring commonPath = L"common\\";
+	std::wstring gamePath = commonPath + folderNameFromManifest((sourcePath + metadataFileName)) + L"\\";
 
-	//use std::rename
+	BOOL success = MoveFileWithProgressW((sourcePath + metadataFileName).c_str(), (destPath + metadataFileName).c_str(),
+		NULL, NULL, MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH);
 
-	//4. Copy folder to dest
+	char buf[260];
+	if (!success)
+	{
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(),
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buf, 256, NULL);
 
-	//use std::rename
+		std::cerr << "Failed to copy app manifest. Error code: " << GetLastError() << " " << buf <<std::endl;
+		return;
+	}
 
+	//Now copy the game to the destination - we need the very verbose and tedious shell functions here
+	//because MoveFileWithProgressW doesn't allow copying directories across volumes.
+	//We also need progress indicators because we're potentially transferring tens of gigabytes and std::rename
+	//doesn't provide that. Finally, we need the security descriptors to be transferred alongside the directories.
+
+
+	//Make it fast. Gaming machines have RAM, let's suck it up.
+	CoInitializeEx(NULL, COINIT_SPEED_OVER_MEMORY);
+
+	IFileOperation* fileOp;
+	HRESULT hres = CoCreateInstance(CLSID_FileOperation, NULL, CLSCTX_ALL, IID_PPV_ARGS(&fileOp));
+	if (FAILED(hres))
+	{
+		//...
+	}
+
+	fileOp->SetOperationFlags(FOFX_MOVEACLSACROSSVOLUMES | FOF_NOCONFIRMMKDIR | FOF_NOCONFIRMATION);
+
+	CComPtr<IShellItem> sourceShellItem, destShellItem;
+
+	hres = SHCreateItemFromParsingName((sourcePath + gamePath).c_str(), NULL, IID_PPV_ARGS(&sourceShellItem));
+	if (FAILED(hres))
+	{
+		//...
+	}
+
+	hres = SHCreateItemFromParsingName((destPath + commonPath).c_str(), 0, IID_PPV_ARGS(&destShellItem));
+	if (FAILED(hres))
+	{
+		//...
+	}
+
+	hres = fileOp->MoveItem(sourceShellItem, destShellItem, NULL, NULL);
+	if (FAILED(hres))
+	{
+		//...
+	}
+
+	hres = fileOp->PerformOperations();
+	if (FAILED(hres))
+	{
+		//if the manifest move succeeded but the game move didn't, should we attempt to revert?
+		//I think no for now, because Steam can recover itself and redownload the 'missing' bits of the game.
+		return;
+	}
+
+	std::cout << "Game copy completed successfully." << std::endl;
 }
 
 std::wstring getSteamInstallDirectory()
@@ -110,11 +219,16 @@ std::wstring getSteamInstallDirectory()
 
 	RegCloseKey(key);
 
+	//Mandatory for some shell APIs that complain too much for their own good.
+	std::replace(retVal.begin(), retVal.end(), '/', '\\');
+
 	return retVal;
 }
 
 std::wstring getTextFileContents(const std::wstring& path)
 {
+	//TODO: lots of widestrings everywhere used unnecessarily. Bit messy. Could get rid of them.
+
 	std::wstring contents = L"";
 
 	std::wifstream stream(path);

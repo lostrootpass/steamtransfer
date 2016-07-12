@@ -31,6 +31,7 @@ int main(int argc, char** argv)
 {
 	std::setlocale(LC_ALL, "en_US.UTF-8");
 	
+#if 0 //Disable the UI until it works at least a little bit.
 	if(argc < 2)
 	{
 		//Launched directly, so show the UI.
@@ -43,6 +44,7 @@ int main(int argc, char** argv)
 		return app.exec();
 	}
 	else
+#endif
 	{
 		//Run from the command line.
 		//QCommandLineParser is unreliable and EXTREMELY buggy,	hence DIY
@@ -55,8 +57,8 @@ int main(int argc, char** argv)
 
 int cmdLineExec(int argc, char** argv)
 {
-	unsigned int appid = 0;
-	unsigned int dest = 0;
+	unsigned int appid = -1;
+	unsigned int dest = -1;
 
 	std::wstring name = L"";
 	std::wstring destName = L"";
@@ -91,18 +93,18 @@ int cmdLineExec(int argc, char** argv)
 	}
 
 	//Convert provided name to actual app ID
-	if(appid == 0 && name != L"")
+	if(appid == -1 && name != L"")
 	{
-		//TODO
+		//TODO - this could be either a name as it appears in the game list or the folder name
 	}
 
 	//Converted provided dest to one indexed in libraryfolders.vdf
-	if(dest == 0 && destName != L"")
+	if(dest == -1 && destName != L"")
 	{
-		//TODO
+		//TODO - because there is only one steam library per drive, we only need the first character here
 	}
 
-	if(appid != 0 && dest != 0)
+	if(appid != -1 && dest != -1)
 	{
 		if(!isSteamRunning())
 			copyApp(appid, dest);
@@ -113,5 +115,6 @@ int cmdLineExec(int argc, char** argv)
 		}
 	}
 
+	std::cin.get();
 	return 0;
 }

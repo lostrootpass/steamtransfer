@@ -1,4 +1,6 @@
 #include "parse.h"
+#include <string>
+#include <algorithm>
 
 size_t find_matching_closing_brace(const std::wstring& str)
 {
@@ -69,15 +71,27 @@ void VDFObject::_parse()
 
 			if(next != std::string::npos)
 			{
-				isKey = !isKey;
-
-				if(!isKey) //i.e. wasKey - flipped early because of return logic.
+				if(isKey)
 					pair.first = rawValue.substr(i + 1, next - i - 1);
 				else
 				{
-					pair.second = rawValue.substr(i + 1, next - i - 1);
+					//Special case: the VDF already escape-slashes paths for us
+					//But this makes the windows shell APIs whine.
+					//So, remove the extra escape slashes, but only for paths
+					std::wstring cleaned = rawValue.substr(i + 1, next - i - 1);
+
+					size_t pos = cleaned.find(L"\\\\");
+					while (pos != std::string::npos)
+					{
+						cleaned.erase(pos, 1);
+						pos = cleaned.find(L"\\\\");
+					}
+
+					pair.second = cleaned;
 					_cache.insert(pair);
 				}
+
+				isKey = !isKey;
 
 				i = next;
 			}
