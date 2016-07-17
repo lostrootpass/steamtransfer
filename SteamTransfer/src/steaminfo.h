@@ -7,8 +7,9 @@
 struct SteamApp
 {
 	unsigned int id;
-	std::string name;
-	std::string currentLibraryFolder;
+	std::wstring displayName;
+	std::wstring folderName;
+	std::wstring currentUniverse;
 };
 
 struct SteamInfo
@@ -19,11 +20,15 @@ struct SteamInfo
 
 	void generateCache();
 
-	unsigned int getUniverseIdFromDriveLetter(wchar_t driveLetter);
+	unsigned int getUniverseIdFromDriveLetter(wchar_t driveLetter) const;
+
+	unsigned int getAppIdFromName(const std::wstring& name) const;
 
 private:
 
 	void _generateLibraryFolderCache();
+
+	void _generateAppCache();
 };
 
 #endif //STEAM_INFO_H_

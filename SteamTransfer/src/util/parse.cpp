@@ -105,9 +105,9 @@ void VDFObject::_parse()
 				continue;
 
 			isKey = false;
-			size_t pos = find_matching_closing_brace(&rawValue[i + 1]);
-			pair.second = rawValue.substr(i, i + pos);
-			i = pos;
+			size_t pos = find_matching_closing_brace(&rawValue[i]);
+			pair.second = rawValue.substr(i, pos + 1);
+			i += pos;
 
 			_cache.insert(pair);
 		}

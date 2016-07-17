@@ -248,4 +248,22 @@ std::wstring getTextFileContents(const std::wstring& path)
 	return contents;
 }
 
+bool getAllManifests(const std::wstring& path, std::vector<std::wstring>& vector)
+{
+	WIN32_FIND_DATAW findData;
+	HANDLE handle = FindFirstFileW((path + L"\\steamapps\\appmanifest_*").c_str(), &findData);
+
+	if (handle == INVALID_HANDLE_VALUE)
+		return false;
+
+	vector.push_back(findData.cFileName);
+
+	while (FindNextFileW(handle, &findData))
+	{
+		vector.push_back(findData.cFileName);
+	}
+
+	return true;
+}
+
 #endif

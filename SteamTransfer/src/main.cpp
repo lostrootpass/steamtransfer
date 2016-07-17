@@ -93,18 +93,25 @@ int cmdLineExec(int argc, char** argv)
 		}
 	}
 
+	SteamInfo info;
+	info.generateCache();
+
 	//Convert provided name to actual app ID
 	if(appid == -1 && name != L"")
 	{
-		//TODO - this could be either a name as it appears in the game list or the folder name
+		appid = info.getAppIdFromName(name);
+
+		if (appid == -1)
+			std::cerr << "Wasn't able to find game install based on name. Try using the app ID instead." << std::endl;
 	}
 
 	//Converted provided dest to one indexed in libraryfolders.vdf
 	if(destName != L"")
 	{
-		SteamInfo info;
-		info.generateCache();
 		dest = info.getUniverseIdFromDriveLetter(destName[0]);
+
+		if (dest == -1)
+			std::cerr << "Didn't detect Steam library on specified drive. Are you sure it exists?" << std::endl;
 	}
 
 	if(appid != -1 && dest != -1)
