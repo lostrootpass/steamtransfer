@@ -24,13 +24,14 @@
 
 #include "ui/MainWindow.h"
 #include "util/platform.h"
+#include "steaminfo.h"
 
 int cmdLineExec(int argc, char** argv);
 
 int main(int argc, char** argv)
 {
 	std::setlocale(LC_ALL, "en_US.UTF-8");
-	
+
 #if 0 //Disable the UI until it works at least a little bit.
 	if(argc < 2)
 	{
@@ -99,9 +100,11 @@ int cmdLineExec(int argc, char** argv)
 	}
 
 	//Converted provided dest to one indexed in libraryfolders.vdf
-	if(dest == -1 && destName != L"")
+	if(destName != L"")
 	{
-		//TODO - because there is only one steam library per drive, we only need the first character here
+		SteamInfo info;
+		info.generateCache();
+		dest = info.getUniverseIdFromDriveLetter(destName[0]);
 	}
 
 	if(appid != -1 && dest != -1)
@@ -111,7 +114,6 @@ int cmdLineExec(int argc, char** argv)
 		else
 		{
 			std::cerr << "Error: cannot copy data while Steam is running." << std::endl;
-			return 1;
 		}
 	}
 

@@ -13,9 +13,17 @@ struct SteamApp
 
 struct SteamInfo
 {
-	std::string installLocation;
-	std::vector<std::string> libraryFolders;
+	std::wstring installLocation;
+	std::vector<std::wstring> libraryFolders;
 	std::vector<SteamApp> appCache;
+
+	void generateCache();
+
+	unsigned int getUniverseIdFromDriveLetter(wchar_t driveLetter);
+
+private:
+
+	void _generateLibraryFolderCache();
 };
 
 #endif //STEAM_INFO_H_

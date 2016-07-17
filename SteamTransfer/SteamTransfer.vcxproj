@@ -151,6 +151,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="dist\jsoncpp.cpp" />
+    <ClCompile Include="src\steaminfo.cpp" />
     <ClCompile Include="src\ui\MainWindow.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\util\parse.cpp" />

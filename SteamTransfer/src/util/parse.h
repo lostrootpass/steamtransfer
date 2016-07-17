@@ -52,6 +52,19 @@ struct VDFObject
 		return *this;
 	}
 
+	operator std::wstring() const
+	{
+		return rawValue;
+	}
+
+	const std::unordered_map<std::wstring, VDFObject>& getAll()
+	{
+		if (!_cache.size())
+			_parse();
+
+		return _cache;
+	}
+
 private:
 
 	void _parse();
