@@ -96,13 +96,21 @@ int cmdLineExec(int argc, char** argv)
 	SteamInfo info;
 	info.generateCache();
 
+	const SteamApp* appInfo = 0;
+
 	//Convert provided name to actual app ID
 	if(appid == -1 && name != L"")
 	{
-		appid = info.getAppIdFromName(name);
-
-		if (appid == -1)
+		appInfo = info.getApp(name);
+		
+		if (appInfo)
+		{
+			appid = appInfo->id;
+		}
+		else
+		{
 			std::cerr << "Wasn't able to find game install based on name. Try using the app ID instead." << std::endl;
+		}
 	}
 
 	//Converted provided dest to one indexed in libraryfolders.vdf
@@ -112,6 +120,22 @@ int cmdLineExec(int argc, char** argv)
 
 		if (dest == -1)
 			std::cerr << "Didn't detect Steam library on specified drive. Are you sure it exists?" << std::endl;
+	}
+	else if (dest == -1 && appInfo)
+	{
+		if (info.libraryFolders.size() == 2)
+		{
+			for (std::wstring& s : info.libraryFolders)
+			{
+				if (s != appInfo->currentUniverse)
+				{
+					dest = info.getUniverseIdFromDriveLetter(s[0]);
+					break;
+				}
+			}
+		}
+		else
+			std::cerr << "Error: too many universes to assume destination. Use --dest [drive letter]" << std::endl;
 	}
 
 	if(appid != -1 && dest != -1)

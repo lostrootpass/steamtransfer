@@ -44,6 +44,18 @@ unsigned int SteamInfo::getAppIdFromName(const std::wstring& name) const
 	return -1;
 }
 
+const SteamApp* SteamInfo::getApp(const std::wstring& name) const
+{
+	for (const SteamApp& app : appCache)
+	{
+		if (app.displayName == name || app.folderName == name)
+		{
+			return &app;
+		}
+	}
+
+	return 0;
+}
 
 void SteamInfo::_generateLibraryFolderCache()
 {

@@ -24,6 +24,8 @@ struct SteamInfo
 
 	unsigned int getAppIdFromName(const std::wstring& name) const;
 
+	const SteamApp* getApp(const std::wstring& name) const;
+
 private:
 
 	void _generateLibraryFolderCache();
